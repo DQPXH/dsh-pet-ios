@@ -11,6 +11,8 @@ jobs:
     # still emits the Xcode 15 project format (objectVersion 56).
     runs-on: macos-14
     timeout-minutes: 40
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,6 +86,18 @@ jobs:
           name: Pet-unsigned-ipa
           path: Pet-unsigned.ipa
           retention-days: 30
+
+      - name: Publish release asset (stable download link)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release delete unsigned-latest --yes --cleanup-tag || true
+          gh release create unsigned-latest Pet-unsigned.ipa \
+            --title "小呆 iOS 未签名包（$(date +%Y-%m-%d)）" \
+            --notes "未签名 IPA。用全能签 / Sideloadly 签名后安装。包含 48 个动作。" \
+            --latest
+          gh release view unsigned-latest --json url -q .url
 
       - name: Upload build log on failure
         if: failure()
