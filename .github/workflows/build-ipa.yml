@@ -1,0 +1,80 @@
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          sw_vers
+          ls -la
+          du -sh ios/Pet/web || true
+
+      - name: Fail fast if web assets are missing
+        run: |
+          test -f ios/Pet/web/index.html
+          test -f ios/Pet/web/pet-data.js
+          test -d ios/Pet/web/anim
+          echo "clips: $(ls ios/Pet/web/anim | wc -l)"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+        env:
+          XCODEGEN_SPEC: project.yml
+
+      - name: Build (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Pet.xcodeproj \
+            -target Pet \
+            -configuration Release \
+            -sdk iphoneos \
+            SYMROOT="$PWD/build" \
+            OBJROOT="$PWD/build/obj" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee build.log
+
+      - name: Package IPA
+        run: |
+          APP=$(find build -maxdepth 4 -type d -name "Pet.app" | head -n 1)
+          echo "APP=$APP"
+          test -n "$APP"
+          test -d "$APP"
+          rm -rf out && mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          cd out
+          zip -qry ../Pet-unsigned.ipa Payload
+          cd ..
+          ls -lh Pet-unsigned.ipa
+          unzip -l Pet-unsigned.ipa | head -n 20
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pet-unsigned-ipa
+          path: Pet-unsigned.ipa
+          retention-days: 30
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7

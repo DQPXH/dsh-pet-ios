@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>小呆</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<meta name="theme-color" content="#0b1220">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="scene">
+    <div id="floor"></div>
+    <div id="shadow"></div>
+    <div id="petWrap">
+      <img id="layerA" class="pet" alt="" draggable="false">
+      <img id="layerB" class="pet" alt="" draggable="false">
+    </div>
+  </div>
+
+  <button id="menuBtn" type="button" aria-label="动作列表">☰</button>
+
+  <div id="sheet" hidden>
+    <div class="sheet-head">
+      <strong>动作</strong>
+      <span id="sheetCount"></span>
+      <button id="sheetClose" type="button">关闭</button>
+    </div>
+    <div id="sheetList"></div>
+  </div>
+
+  <script src="pet-data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    /* only meaningful when served over https/localhost; silently skipped in the iOS app */
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
