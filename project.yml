@@ -23,6 +23,9 @@ targets:
           - "Info.plist"
       - path: ios/Pet/web
         type: folder
+    dependencies:
+      - target: PetWidget
+        embed: true
     settings:
       base:
         PRODUCT_NAME: Pet
@@ -38,3 +41,24 @@ targets:
         ONLY_ACTIVE_ARCH: NO
     scheme:
       testTargets: []
+
+  PetWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ios/PetWidget
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: PetWidget
+        PRODUCT_BUNDLE_IDENTIFIER: io.dsh.pet.ios.widget
+        INFOPLIST_FILE: ios/PetWidget/Info.plist
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGN_IDENTITY: ""
+        ONLY_ACTIVE_ARCH: NO
