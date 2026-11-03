@@ -7,7 +7,9 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    # Xcode 16 lives on macos-15; newer XcodeGen emits objectVersion 77 which
+    # Xcode 15 (macos-14) refuses to open.
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - name: Checkout
