@@ -7,9 +7,9 @@ on:
 
 jobs:
   build:
-    # Xcode 16 lives on macos-15; newer XcodeGen emits objectVersion 77 which
-    # Xcode 15 (macos-14) refuses to open.
-    runs-on: macos-15
+    # macos-14 (Xcode 15.4) gets a runner immediately, and XcodeGen 2.38.0 below
+    # still emits the Xcode 15 project format (objectVersion 56).
+    runs-on: macos-14
     timeout-minutes: 40
     steps:
       - name: Checkout
@@ -19,8 +19,7 @@ jobs:
         run: |
           xcodebuild -version
           sw_vers
-          ls -la
-          du -sh ios/Pet/web || true
+          uname -m
 
       - name: Fail fast if web assets are missing
         run: |
@@ -28,14 +27,25 @@ jobs:
           test -f ios/Pet/web/pet-data.js
           test -d ios/Pet/web/anim
           echo "clips: $(ls ios/Pet/web/anim | wc -l)"
+          du -sh ios/Pet/web
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install XcodeGen 2.38.0
+        run: |
+          set -euo pipefail
+          curl -fsSL -o xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/download/2.38.0/xcodegen.zip
+          unzip -q xcodegen.zip -d xc
+          BIN=$(find "$PWD/xc" -name xcodegen -type f | head -n 1)
+          echo "binary: $BIN"
+          chmod +x "$BIN"
+          echo "$(dirname "$BIN")" >> "$GITHUB_PATH"
+          "$BIN" --version
 
       - name: Generate Xcode project
-        run: xcodegen generate
-        env:
-          XCODEGEN_SPEC: project.yml
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          grep -m1 objectVersion Pet.xcodeproj/project.pbxproj
+          ls -la Pet.xcodeproj
 
       - name: Build (unsigned)
         run: |
@@ -54,17 +64,19 @@ jobs:
 
       - name: Package IPA
         run: |
+          set -euo pipefail
           APP=$(find build -maxdepth 4 -type d -name "Pet.app" | head -n 1)
           echo "APP=$APP"
           test -n "$APP"
           test -d "$APP"
+          ls -la "$APP"
           rm -rf out && mkdir -p out/Payload
           cp -R "$APP" out/Payload/
           cd out
           zip -qry ../Pet-unsigned.ipa Payload
           cd ..
           ls -lh Pet-unsigned.ipa
-          unzip -l Pet-unsigned.ipa | head -n 20
+          unzip -l Pet-unsigned.ipa | head -n 30
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
